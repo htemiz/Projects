@@ -6,11 +6,11 @@
 ## 👥 Project Team & Authors  
 
 - **Hakan Temiz** – Project Manager
-- **Muhammed Enes Kandemir** – 
-- **Eren Güler** – 
-- **Hüseyin Gürgün** – 
-- **Gökhan Yavuz** –
-- **Ömer Bozbay** –
+- **Muhammed Enes Kandemir** 
+- **Eren Güler** 
+- **Hüseyin Gürgün** 
+- **Gökhan Yavuz** 
+- **Ömer Bozbay** 
 
 ---
 
