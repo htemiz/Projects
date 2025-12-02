@@ -63,7 +63,7 @@ Key goals include:
 
 ---
 ## 📦 Repository Structure
-
+```
 ├── 1_Software/                    # Control software, web interface, and embedded code
 │   ├── chart.js/                 # Chart.js library
 │   ├── acu.ico                   # Favicon
@@ -84,4 +84,4 @@ Key goals include:
 │   └── LoRa_Rapor_30July.pdf     # Project report
 │
 └── README.md                     # This file
-
+```
