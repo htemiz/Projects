@@ -1,0 +1,6 @@
+# Gizli ayarlar ve çalışma verisi — GitHub'a YÜKLENMEZ
+config.json
+data/
+node_modules/
+*.log
+.DS_Store

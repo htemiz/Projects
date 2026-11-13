@@ -1,0 +1,56 @@
+{
+  "port": 3000,
+  "host": "0.0.0.0",
+  "uiPassword": "",
+  "ingestToken": "degistir-beni",
+  "dryRun": false,
+  "staleMinutes": 90,
+  "hardMaxRunMin": 60,
+  "chirpstack": {
+    "apiUrl": "http://localhost:8090",
+    "apiToken": "BURAYA_CHIRPSTACK_API_KEY",
+    "flushQueue": true
+  },
+  "zones": [
+    {
+      "id": "bolge1",
+      "name": "Bölge 1",
+      "sensor": {
+        "devEui": "c174f394d6c8c122",
+        "fields": {
+          "moisture": "soil_moisture",
+          "temperature": "temperature",
+          "humidity": "humidity",
+          "battery": "battery",
+          "rain": "rain"
+        }
+      },
+      "valve": {
+        "devEui": "c174f394d6c8c122",
+        "fPort": 10,
+        "confirmed": false,
+        "valves": [
+          { "label": "Vana 1", "onHex": "01", "offHex": "02" },
+          { "label": "Vana 2", "onHex": "03", "offHex": "04" }
+        ],
+        "bothOnHex": "05",
+        "bothOffHex": "06"
+      },
+      "mode": "manual",
+      "auto": {
+        "enabled": true,
+        "onBelow": 30,
+        "offAbove": 45,
+        "criticalBelow": 20,
+        "maxRunMin": 15,
+        "minIntervalMin": 60,
+        "allowedHours": [[5, 9], [18, 23]],
+        "minTempC": 4,
+        "skipIfRain": true,
+        "tempBoost": true,
+        "faultCheckMin": 5,
+        "faultMinRise": 1
+      }
+    }
+  ]
+}

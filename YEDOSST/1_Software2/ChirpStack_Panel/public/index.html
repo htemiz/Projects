@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Otonom Sulama Paneli</title>
+<style>
+  :root {
+    --bg: #f4f6f4; --card: #ffffff; --ink: #1c2a22; --muted: #66756c; --line: #dfe6e1;
+    --green: #2e8b57; --green-soft: #e3f3ea; --blue: #2b78c2; --amber: #c98a12; --red: #c43d3d; --red-soft: #fbe9e9;
+    --amber-soft: #fcf3dc; --shadow: 0 1px 2px rgba(20,40,30,.06), 0 4px 14px rgba(20,40,30,.05);
+  }
+  :root[data-theme="dark"] { --bg: #121815; --card: #1a231e; --ink: #e6efe9; --muted: #8fa398; --line: #2a3730;
+      --green: #4fc487; --green-soft: #1d3a2b; --blue: #6aaee8; --amber: #e3b04b; --red: #ef7777; --red-soft: #3a2121; --amber-soft: #3a3120;
+      --shadow: none; }
+  [hidden] { display: none !important; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 15px/1.45 system-ui, -apple-system, "Segoe UI", Roboto, sans-serif; }
+  header { display: flex; align-items: center; gap: 12px; padding: 14px 22px; border-bottom: 1px solid var(--line); background: var(--card); position: sticky; top: 0; z-index: 5; flex-wrap: wrap; }
+  header h1 { font-size: 18px; margin: 0; font-weight: 650; }
+  .spacer { flex: 1; }
+  .pill { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px; border-radius: 99px; font-size: 12.5px; font-weight: 600; background: var(--green-soft); color: var(--green); white-space: nowrap; }
+  .pill.warn { background: var(--amber-soft); color: var(--amber); }
+  .pill.bad { background: var(--red-soft); color: var(--red); }
+  .pill.off { background: var(--line); color: var(--muted); }
+  .pill.on { background: var(--blue); color: #fff; }
+  .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor; }
+  main { max-width: 980px; margin: 0 auto; padding: 20px 18px 60px; display: grid; gap: 18px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 18px 20px; box-shadow: var(--shadow); }
+  .card h2 { margin: 0 0 12px; font-size: 16px; font-weight: 650; }
+  .zone-head { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin-bottom: 14px; }
+  .zone-head h2 { margin: 0; font-size: 19px; }
+  .grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 12px; }
+  @media (max-width: 760px) { .grid { grid-template-columns: 1fr 1fr; } .grid .wide { grid-column: span 2; } }
+  .stat { padding: 10px 12px; border-radius: 10px; background: var(--bg); }
+  .stat .k { font-size: 12px; color: var(--muted); }
+  .stat .v { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; }
+  .stat .v small { font-size: 13px; font-weight: 500; color: var(--muted); }
+  .gauge { position: relative; height: 10px; background: var(--line); border-radius: 6px; margin: 8px 0 2px; }
+  .gauge .fill { position: absolute; inset: 0 auto 0 0; border-radius: 6px; background: var(--blue); transition: width .5s; }
+  .gauge .mark { position: absolute; top: -4px; bottom: -4px; width: 2px; background: var(--ink); opacity: .55; }
+  .decision { margin: 14px 0 6px; padding: 10px 14px; border-radius: 10px; background: var(--green-soft); }
+  .decision b { display: block; font-size: 12px; text-transform: uppercase; letter-spacing: .5px; color: var(--green); margin-bottom: 2px; }
+  .alert { margin: 10px 0; padding: 10px 14px; border-radius: 10px; background: var(--red-soft); color: var(--red); display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+  button { font: inherit; cursor: pointer; padding: 8px 16px; border-radius: 9px; border: 1px solid var(--line); background: var(--card); color: var(--ink); font-weight: 600; }
+  button:hover { border-color: var(--muted); }
+  button.primary { background: var(--green); border-color: var(--green); color: #fff; }
+  button.danger { background: var(--red); border-color: var(--red); color: #fff; }
+  button.small { padding: 4px 10px; font-size: 13px; }
+  button:disabled { opacity: .5; cursor: not-allowed; }
+  input[type=number], input[type=text] { font: inherit; padding: 7px 9px; border-radius: 8px; border: 1px solid var(--line); background: var(--bg); color: var(--ink); width: 100%; }
+  input[type=number].inline { width: 76px; }
+  label { display: block; font-size: 12.5px; color: var(--muted); margin-bottom: 3px; }
+  .seg { display: inline-flex; border: 1px solid var(--line); border-radius: 9px; overflow: hidden; }
+  .seg button { border: 0; border-radius: 0; padding: 7px 14px; background: transparent; }
+  .seg button.on { background: var(--green); color: #fff; }
+  .ctl { margin-top: 16px; border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
+  .ctl-top { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; padding: 10px 14px; background: var(--bg); }
+  .ctl-top .check { margin: 0; }
+  .vrow { display: flex; align-items: center; gap: 10px; padding: 11px 14px; border-top: 1px solid var(--line); }
+  .vrow b { min-width: 96px; font-size: 15px; }
+  .vrow.all { background: var(--bg); }
+  .vrow .sp { flex: 1; }
+  .hint { font-size: 12.5px; color: var(--muted); margin-top: 6px; }
+  canvas { width: 100%; height: 190px; display: block; margin-top: 16px; }
+  .range { margin-top: 8px; display: flex; gap: 8px; align-items: center; font-size: 13px; color: var(--muted); flex-wrap: wrap; }
+  details { margin-top: 14px; border-top: 1px solid var(--line); padding-top: 12px; }
+  summary { cursor: pointer; font-weight: 600; }
+  .form { display: grid; grid-template-columns: repeat(auto-fit, minmax(190px, 1fr)); gap: 12px; margin-top: 12px; }
+  .check { display: flex; gap: 8px; align-items: center; font-size: 14px; color: var(--ink); margin: 0; }
+  .two { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 860px) { .two { grid-template-columns: 1fr; } }
+  .log { max-height: 300px; overflow: auto; font-size: 13.5px; }
+  .log div { padding: 5px 0; border-bottom: 1px solid var(--line); display: flex; gap: 10px; }
+  .log time { color: var(--muted); font-variant-numeric: tabular-nums; flex: none; }
+  .log .warn { color: var(--amber); } .log .error { color: var(--red); }
+  table { width: 100%; border-collapse: collapse; font-size: 13px; }
+  td, th { text-align: left; padding: 5px 6px; border-bottom: 1px solid var(--line); }
+  th { color: var(--muted); font-weight: 500; }
+  code { background: var(--bg); padding: 1px 5px; border-radius: 5px; font-size: 12.5px; }
+  .toast { position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); background: var(--ink); color: var(--bg); padding: 10px 18px; border-radius: 10px; font-weight: 600; opacity: 0; transition: opacity .25s; pointer-events: none; z-index: 20; }
+  .toast.show { opacity: 1; }
+</style>
+</head>
+<body>
+<header>
+  <h1>🌱 Otonom Sulama Paneli</h1>
+  <span id="conn" class="pill off"><span class="dot"></span><span>bağlanıyor…</span></span>
+  <span id="dry" class="pill warn" hidden>DENEME MODU — komutlar ChirpStack'e gitmez</span>
+  <div class="spacer"></div>
+  <button class="small" id="theme" title="Açık / koyu tema">🌙</button>
+  <span id="clock" class="hint"></span>
+</header>
+
+<main>
+  <div id="zones"></div>
+
+  <div class="two">
+    <section class="card">
+      <h2>Olay günlüğü</h2>
+      <div id="log" class="log"></div>
+    </section>
+    <section class="card">
+      <h2>Son komutlar</h2>
+      <div style="max-height:300px;overflow:auto"><table id="cmds"></table></div>
+    </section>
+  </div>
+
+  <section class="card">
+    <details style="margin:0;border:0;padding:0">
+      <summary>Elle hex downlink gönder (ileri düzey)</summary>
+      <p class="hint">ChirpStack'teki “Queue” ekranının yaptığını yapar: hex → base64 çevrilip cihazın kuyruğuna eklenir.</p>
+      <div class="form" style="grid-template-columns: 2fr 1fr 2fr auto auto;align-items:end">
+        <div><label>DevEUI</label><input type="text" id="rawEui" placeholder="c174f394d6c8c122" spellcheck="false"></div>
+        <div><label>fPort</label><input type="number" id="rawPort" value="10" min="1" max="223"></div>
+        <div><label>Hex veri</label><input type="text" id="rawHex" placeholder="01" spellcheck="false"></div>
+        <label class="check"><input type="checkbox" id="rawConf"> Onaylı</label>
+        <button class="primary" id="rawSend">Gönder</button>
+      </div>
+    </details>
+  </section>
+</main>
+<div id="toast" class="toast"></div>
+
+<script>
+const $ = (s, r = document) => r.querySelector(s);
+const fmt = (n, d = 1) => (n == null ? '—' : (Math.round(n * 10 ** d) / 10 ** d).toString());
+const esc = (s) => String(s).replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+let state = null, range = 24;
+const histCache = {}, built = {};
+
+// Tema: varsayılan AÇIK; buton ile koyuya geçilir ve tarayıcıda hatırlanır
+function applyTheme(t) {
+  if (t === 'dark') document.documentElement.setAttribute('data-theme', 'dark'); else document.documentElement.removeAttribute('data-theme');
+  $('#theme').textContent = t === 'dark' ? '☀️' : '🌙';
+  if (state) Object.keys(built).forEach(drawChart);
+}
+let theme = 'light';
+try { theme = localStorage.getItem('theme') === 'dark' ? 'dark' : 'light'; } catch {}
+applyTheme(theme);
+$('#theme').onclick = () => {
+  theme = theme === 'dark' ? 'light' : 'dark';
+  try { localStorage.setItem('theme', theme); } catch {}
+  applyTheme(theme);
+};
+
+function toast(msg) { const t = $('#toast'); t.textContent = msg; t.classList.add('show'); setTimeout(() => t.classList.remove('show'), 2600); }
+async function api(path, body) {
+  const r = await fetch(path, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) });
+  const j = await r.json().catch(() => ({}));
+  if (!r.ok) throw new Error(j.error || r.statusText);
+  return j;
+}
+function ago(ts) {
+  if (!ts) return 'hiç';
+  const s = Math.max(0, (Date.now() - ts) / 1000);
+  if (s < 90) return Math.round(s) + ' sn önce';
+  if (s < 5400) return Math.round(s / 60) + ' dk önce';
+  if (s < 172800) return Math.round(s / 3600) + ' sa önce';
+  return Math.round(s / 86400) + ' gün önce';
+}
+const hhmm = (ts) => new Date(ts).toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+const hoursToText = (a) => (a || []).map(([s, e]) => `${s}-${e}`).join(', ');
+function textToHours(t) {
+  t = t.trim(); if (!t) return [];
+  return t.split(',').map((p) => { const m = p.trim().match(/^(\d{1,2}(?:\.\d+)?)\s*-\s*(\d{1,2}(?:\.\d+)?)$/); if (!m) throw new Error('Saat aralığı örnek: 5-9, 18-23'); return [+m[1], +m[2]]; });
+}
+
+// ---------------------------------------------------------------- bölge kartı
+function ensureZone(z) {
+  if (built[z.id]) return;
+  const el = document.createElement('section');
+  el.className = 'card'; el.id = 'z-' + z.id;
+  const rows = z.valves.map((v, i) => `
+      <div class="vrow"><b>${esc(v.label)}</b><span class="pill off" data-vstate="${i}">Kapalı</span><span class="sp"></span>
+        <button class="primary" data-va="on" data-v="${i}">Aç</button><button class="danger" data-va="off" data-v="${i}">Kapat</button></div>`).join('');
+  const all = z.valves.length > 1 ? `
+      <div class="vrow all"><b>İkisi birden</b><span class="sp"></span>
+        <button class="primary" data-va="on" data-v="all">İkisini aç</button><button class="danger" data-va="off" data-v="all">İkisini kapat</button></div>` : '';
+  el.innerHTML = `
+    <div class="status"></div>
+    <div class="ctl">
+      <div class="ctl-top">
+        <label class="check">Açık kalma süresi <input type="number" class="inline" value="10" min="0.5" step="0.5" data-role="min"> dk</label>
+        <div class="spacer"></div>
+        <div class="seg"><button data-mode="auto">Otomatik</button><button data-mode="manual">Manuel</button></div>
+      </div>${rows}${all}
+    </div>
+    <div class="hint">Elle açma/kapatma bölgeyi otomatik olarak <b>Manuel</b> moda alır. Tekrar otomatik için “Otomatik”e basın.</div>
+    <canvas></canvas>
+    <div class="range">Aralık:
+      <div class="seg"><button data-range="6">6 sa</button><button data-range="24">24 sa</button><button data-range="168">7 gün</button></div>
+      <span><span style="color:var(--blue)">━</span> nem % &nbsp;<span style="color:var(--amber)">━</span> sıcaklık °C &nbsp;<span style="background:var(--green-soft);padding:0 6px;border-radius:4px">sulama</span></span>
+    </div>
+    <details class="settings"><summary>Otomatik sulama ayarları</summary>
+      <div class="form">
+        <div><label>Açılma eşiği: nem altına düşerse (%)</label><input type="number" name="onBelow" step="1"></div>
+        <div><label>Kapanma hedefi: nem şuna ulaşırsa (%)</label><input type="number" name="offAbove" step="1"></div>
+        <div><label>Kritik nem (%) — saat/bekleme yok sayılır</label><input type="number" name="criticalBelow" step="1"></div>
+        <div><label>En uzun sulama (dk)</label><input type="number" name="maxRunMin" step="0.5"></div>
+        <div><label>İki sulama arası en az (dk)</label><input type="number" name="minIntervalMin" step="5"></div>
+        <div><label>Sulama saatleri (örn: 5-9, 18-23)</label><input type="text" name="allowedHours"></div>
+        <div><label>Bu sıcaklığın altında sulama (°C)</label><input type="number" name="minTempC" step="1"></div>
+        <div><label>Arıza kontrolü: kaç dk sonra</label><input type="number" name="faultCheckMin" step="1"></div>
+        <div><label>Arıza kontrolü: en az nem artışı (%)</label><input type="number" name="faultMinRise" step="0.5"></div>
+        <label class="check"><input type="checkbox" name="enabled"> Otomatik sulama açık</label>
+        <label class="check"><input type="checkbox" name="skipIfRain"> Yağmurda sulama yapma</label>
+        <label class="check"><input type="checkbox" name="tempBoost"> Sıcakta eşiği yükselt</label>
+      </div>
+      <div style="margin-top:12px"><button class="primary" data-act="save">Ayarları kaydet</button></div>
+    </details>`;
+  $('#zones').appendChild(el);
+  built[z.id] = el;
+
+  el.addEventListener('click', async (e) => {
+    const b = e.target.closest('button'); if (!b) return;
+    try {
+      if (b.dataset.va) {
+        const minutes = +$('[data-role=min]', el).value;
+        const label = b.dataset.v === 'all' ? 'İkisi' : state.zones.find((x) => x.id === z.id).valves[+b.dataset.v].label;
+        await api('/api/valve', { zone: z.id, action: b.dataset.va, valve: b.dataset.v, minutes });
+        toast(`${label}: ${b.dataset.va === 'on' ? 'açma' : 'kapatma'} komutu gönderildi`);
+      }
+      else if (b.dataset.act === 'clearfault') { await api('/api/clear-fault', { zone: z.id }); }
+      else if (b.dataset.mode) { await api('/api/mode', { zone: z.id, mode: b.dataset.mode }); }
+      else if (b.dataset.range) { range = +b.dataset.range; Object.keys(built).forEach(loadHistory); }
+      else if (b.dataset.act === 'save') {
+        const auto = {};
+        for (const i of el.querySelectorAll('.settings [name]')) {
+          auto[i.name] = i.type === 'checkbox' ? i.checked : i.name === 'allowedHours' ? textToHours(i.value) : +i.value;
+        }
+        await api('/api/settings', { zone: z.id, auto }); toast('Ayarlar kaydedildi');
+      }
+    } catch (err) { toast('Hata: ' + err.message); }
+  });
+  fillSettings(z);
+  loadHistory(z.id);
+}
+function fillSettings(z) {
+  for (const i of built[z.id].querySelectorAll('.settings [name]')) {
+    const v = z.auto[i.name];
+    if (i.type === 'checkbox') i.checked = !!v; else if (i.name === 'allowedHours') i.value = hoursToText(v); else i.value = v;
+  }
+}
+
+function renderZone(z) {
+  ensureZone(z);
+  const el = built[z.id], r = z.last || {}, m = r.moisture;
+  const pct = m == null ? 0 : Math.max(0, Math.min(100, m));
+  const modePill = z.mode === 'auto' && z.auto.enabled ? '<span class="pill">OTOMATİK</span>' : '<span class="pill warn">MANUEL</span>';
+  const run = z.valveOn ? `<span class="pill on"><span class="dot"></span>SULAMA SÜRÜYOR <span data-elapsed="${z.onSince}" data-plan="${z.plannedRunMin || ''}"></span></span>` : '<span class="pill off"><span class="dot"></span>Vanalar kapalı</span>';
+  $('.status', el).innerHTML = `
+    <div class="zone-head"><h2>${esc(z.name)}</h2>${modePill}${run}${z.stale ? '<span class="pill bad">VERİ ESKİ</span>' : ''}
+      <div class="spacer"></div><span class="hint">Son veri: ${ago(r.ts)}</span></div>
+    <div class="grid">
+      <div class="stat wide"><div class="k">Toprak nemi</div><div class="v">${fmt(m)}<small> %</small></div>
+        <div class="gauge"><div class="fill" style="width:${pct}%"></div>
+          <div class="mark" style="left:${z.auto.onBelow}%" title="açılma eşiği"></div><div class="mark" style="left:${z.auto.offAbove}%" title="hedef"></div></div>
+        <div class="hint">açılma %${z.auto.onBelow} · hedef %${z.auto.offAbove}${z.slope != null ? ` · eğilim ${z.slope > 0 ? '+' : ''}${z.slope} %/sa` : ''}</div></div>
+      <div class="stat"><div class="k">Sıcaklık</div><div class="v">${fmt(r.temperature)}<small> °C</small></div></div>
+      <div class="stat"><div class="k">Hava nemi</div><div class="v">${fmt(r.humidity, 0)}<small> %</small></div></div>
+      <div class="stat"><div class="k">Batarya</div><div class="v">${fmt(r.battery, 0)}<small> ${r.battery != null && r.battery > 100 ? 'mV' : '%'}</small></div></div>
+    </div>
+    <div class="hint">Sinyal: ${fmt(r.rssi, 0)} dBm · SNR ${fmt(r.snr)}</div>
+    ${z.fault ? `<div class="alert"><b>⚠ Arıza şüphesi:</b> ${esc(z.fault)} <button class="small" data-act="clearfault">Sıfırla</button></div>` : ''}
+    <div class="decision"><b>Karar motoru</b>${esc(z.decision)}${z.riseRate ? `<div class="hint">Öğrenilen nem artış hızı: ~${z.riseRate} %/dk</div>` : ''}</div>`;
+  z.valves.forEach((v, i) => {
+    const s = el.querySelector(`[data-vstate="${i}"]`);
+    if (s) { s.className = 'pill ' + (v.on ? 'on' : 'off'); s.textContent = v.on ? 'AÇIK' : 'Kapalı'; }
+  });
+  for (const b of el.querySelectorAll('[data-mode]')) b.classList.toggle('on', b.dataset.mode === z.mode);
+  for (const b of el.querySelectorAll('[data-range]')) b.classList.toggle('on', +b.dataset.range === range);
+  tickElapsed();
+}
+function tickElapsed() {
+  for (const s of document.querySelectorAll('[data-elapsed]')) {
+    const t = (Date.now() - +s.dataset.elapsed) / 1000, plan = +s.dataset.plan;
+    s.textContent = `· ${Math.floor(t / 60)}:${String(Math.floor(t % 60)).padStart(2, '0')}${plan ? ' / ' + plan + ' dk' : ''}`;
+  }
+  $('#clock').textContent = new Date().toLocaleString('tr-TR');
+}
+setInterval(tickElapsed, 1000);
+
+// ---------------------------------------------------------------- grafik
+async function loadHistory(id) {
+  try { histCache[id] = await (await fetch(`/api/history?zone=${id}&hours=${range}`)).json(); drawChart(id); } catch {}
+}
+// Komut geçmişinden "herhangi bir vana açık" aralıklarını çıkarır
+function openIntervals(z, cmds, t1) {
+  const same = (a, b) => a && b && a.toLowerCase() === b.toLowerCase();
+  const on = z.valves.map(() => false), out = [];
+  let since = null;
+  for (const k of cmds) {
+    if (same(k.hex, z.both.onHex)) on.fill(true);
+    else if (same(k.hex, z.both.offHex)) on.fill(false);
+    else z.valves.forEach((v, i) => { if (same(k.hex, v.onHex)) on[i] = true; else if (same(k.hex, v.offHex)) on[i] = false; });
+    const any = on.some(Boolean);
+    if (any && since == null) since = k.ts;
+    if (!any && since != null) { out.push([since, k.ts]); since = null; }
+  }
+  if (since != null) out.push([since, t1]);
+  return out;
+}
+function drawChart(id) {
+  const el = built[id], z = state.zones.find((x) => x.id === id), h = histCache[id];
+  if (!el || !h) return;
+  const cv = $('canvas', el), dpr = window.devicePixelRatio || 1, W = cv.clientWidth, H = cv.clientHeight;
+  cv.width = W * dpr; cv.height = H * dpr;
+  const c = cv.getContext('2d'); c.scale(dpr, dpr);
+  const css = getComputedStyle(document.body), col = (n) => css.getPropertyValue(n).trim();
+  const padL = 36, padR = 36, padT = 10, padB = 22;
+  const t1 = Date.now(), t0 = t1 - range * 3600e3;
+  const X = (t) => padL + ((t - t0) / (t1 - t0)) * (W - padL - padR);
+  const Y = (v) => padT + (1 - v / 100) * (H - padT - padB);
+  c.font = '11px system-ui'; c.textBaseline = 'middle';
+  c.fillStyle = col('--green-soft');
+  for (const [a, b] of openIntervals(z, h.commands, t1)) {
+    const x0 = X(Math.max(a, t0)), x1 = X(Math.max(b, t0));
+    c.fillRect(x0, padT, x1 - x0, H - padT - padB);
+  }
+  c.strokeStyle = col('--line'); c.fillStyle = col('--muted'); c.lineWidth = 1; c.textAlign = 'right';
+  for (let v = 0; v <= 100; v += 25) { c.beginPath(); c.moveTo(padL, Y(v)); c.lineTo(W - padR, Y(v)); c.stroke(); c.fillText(v, padL - 6, Y(v)); }
+  c.textAlign = 'center';
+  const stepH = range <= 6 ? 1 : range <= 24 ? 4 : 24;
+  for (let t = Math.ceil(t0 / 3600e3 / stepH) * stepH * 3600e3; t < t1; t += stepH * 3600e3) {
+    const d = new Date(t); c.fillText(range > 24 ? d.toLocaleDateString('tr-TR', { day: '2-digit', month: '2-digit' }) : d.getHours() + ':00', X(t), H - 8);
+  }
+  c.setLineDash([4, 4]); c.strokeStyle = col('--muted');
+  for (const v of [z.auto.onBelow, z.auto.offAbove]) { c.beginPath(); c.moveTo(padL, Y(v)); c.lineTo(W - padR, Y(v)); c.stroke(); }
+  c.setLineDash([]);
+  const line = (key, color, scale) => {
+    c.strokeStyle = color; c.lineWidth = 2; c.beginPath(); let first = true, prev = 0;
+    for (const p of h.readings) {
+      if (p[key] == null) continue;
+      const x = X(p.ts), y = Y(scale(p[key]));
+      if (first || p.ts - prev > 3 * 3600e3) c.moveTo(x, y); else c.lineTo(x, y);
+      first = false; prev = p.ts;
+    }
+    c.stroke();
+  };
+  line('temperature', col('--amber'), (v) => Math.max(0, Math.min(100, v * 2)));
+  line('moisture', col('--blue'), (v) => v);
+  c.fillStyle = col('--amber'); c.textAlign = 'left';
+  for (let v = 0; v <= 50; v += 25) c.fillText(v + '°', W - padR + 6, Y(v * 2));
+  if (!h.readings.length) { c.fillStyle = col('--muted'); c.textAlign = 'center'; c.fillText('Bu aralıkta veri yok', W / 2, H / 2); }
+}
+window.addEventListener('resize', () => state && Object.keys(built).forEach(drawChart));
+
+// ---------------------------------------------------------------- günlük + komutlar
+async function loadLog() {
+  const ev = await (await fetch('/api/events?limit=80')).json();
+  $('#log').innerHTML = ev.map((e) => `<div class="${e.level}"><time>${hhmm(e.ts)}</time><span>${e.zone ? '<b>' + esc(e.zone) + '</b> · ' : ''}${esc(e.msg)}</span></div>`).join('') || '<div>Henüz olay yok</div>';
+}
+async function loadCmds() {
+  const c = await (await fetch('/api/commands')).json();
+  $('#cmds').innerHTML = '<tr><th>Saat</th><th>Hex</th><th>Kaynak</th><th>Durum</th></tr>' +
+    c.map((x) => `<tr><td>${hhmm(x.ts)}</td><td><code>${esc(x.hex)}</code></td><td>${esc(x.source)}</td><td title="${esc(x.note || '')}">${x.status === 'error' ? '<span style="color:var(--red)">hata</span>' : esc(x.status)}</td></tr>`).join('');
+}
+$('#rawSend').onclick = async () => {
+  try {
+    const r = await api('/api/downlink', { devEui: $('#rawEui').value, fPort: +$('#rawPort').value, hex: $('#rawHex').value, confirmed: $('#rawConf').checked });
+    toast('Gönderildi (' + r.status + ')');
+  } catch (e) { toast('Hata: ' + e.message); }
+};
+
+// ---------------------------------------------------------------- canlı bağlantı
+function applyState(s) {
+  state = s;
+  $('#dry').hidden = !s.dryRun;
+  for (const z of s.zones) renderZone(z);
+}
+function connect() {
+  const es = new EventSource('/api/stream');
+  const conn = (ok) => { const c = $('#conn'); c.className = 'pill ' + (ok ? '' : 'bad'); c.lastChild.textContent = ok ? 'canlı' : 'bağlantı koptu'; };
+  es.onopen = () => { conn(true); loadLog(); loadCmds(); };
+  es.onerror = () => conn(false);
+  es.addEventListener('state', (e) => applyState(JSON.parse(e.data)));
+  es.addEventListener('reading', (e) => { const id = JSON.parse(e.data).zone; if (built[id]) loadHistory(id); });
+  es.addEventListener('log', () => loadLog());
+  es.addEventListener('command', () => { loadCmds(); Object.keys(built).forEach(loadHistory); });
+}
+connect();
+</script>
+</body>
+</html>
