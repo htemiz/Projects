@@ -1,0 +1,12 @@
+{
+  "name": "sulama-paneli",
+  "version": "1.0.0",
+  "description": "ChirpStack (LoRaWAN) için otonom sulama paneli: canlı veri, vana kontrolü ve karar motoru",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "simulate": "node simulate.js"
+  },
+  "engines": { "node": ">=22" },
+  "license": "MIT"
+}
